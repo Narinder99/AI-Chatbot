@@ -1,7 +1,8 @@
 from pypdf import PdfReader 
 from langchain_cohere import CohereEmbeddings
 from pinecone import Pinecone, ServerlessSpec
-import re
+import re,os
+from keys import pinecone_key as pineConeKey, cohere_api_key as cohereKey
 
 
 def extract_text_from_pdf(pdf_path):
@@ -10,10 +11,9 @@ def extract_text_from_pdf(pdf_path):
         reader = PdfReader(f)
         for page in reader.pages:
             text += page.extract_text()
-            return text
     return text
 
-def split_text_into_chunks(text, chunk_size=100):
+def split_text_into_chunks(text, chunk_size=50):
     # Split text into words
     words = re.findall(r'\b\w+\b', text)
     # Initialize variables
@@ -35,12 +35,12 @@ def split_text_into_chunks(text, chunk_size=100):
     return chunks
 
 def pineconeSetup():
-    pdf_path = './chatbot-server/doc.pdf'
+    pdf_path = '76gdb38fn3.pdf'
     pdf_text = extract_text_from_pdf(pdf_path)
     chunks = split_text_into_chunks(pdf_text, chunk_size=100)
-
+    print(chunks)
     #Pinecone
-    pc = Pinecone(api_key='779cf677-7000-4b40-b235-0a0f6bb08aca')
+    pc = Pinecone(api_key=pineConeKey)
     spec = ServerlessSpec(cloud='aws', region='us-east-1')
     index_name = 'chat-bot'
 
@@ -56,7 +56,7 @@ def pineconeSetup():
     index = pc.Index(index_name)
 
     #Embeddings
-    embeddings_model = CohereEmbeddings(cohere_api_key="kTfGGm32yJP2tBJZpFl0BZgDZfOZcoaOEIaVTrcT")
+    embeddings_model = CohereEmbeddings(cohere_api_key=cohereKey)
     embeddings = embeddings_model.embed_documents(chunks)
     array_of_objects = []
     for idx, values in enumerate(embeddings):
